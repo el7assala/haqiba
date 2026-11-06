@@ -444,9 +444,9 @@ function vBuy(){
    <form class="form" id="payForm" style="margin-top:12px">
     <div class="field"><label for="pName">اسمك</label><input id="pName" autocomplete="name" required maxlength="80"></div>
     <div class="field"><label for="pEmail">إيميلك (هيوصلك عليه الكود)</label><input id="pEmail" type="email" dir="ltr" autocomplete="email" required></div>
-    <div class="field"><label for="pIg">اسم حسابك اللي متابع بيه (تيكتوك أو إنستجرام)</label><input id="pIg" dir="ltr" placeholder="@username" required maxlength="60"></div>
+    
     <div class="field"><label for="pShot">صورة التحويل</label><input id="pShot" class="file-in" type="file" accept="image/*" required><img id="shotPrev" class="shot-prev" alt=""></div>
-    <label class="check"><input type="checkbox" id="pFollow" required>أنا متابع للحصّالة على تيكتوك أو إنستجرام</label>
+    <label class="check"><input type="checkbox" id="pFollow" required>أنا متابع للحصّالة على تيكتوك أو إنستجرام (واحد منهم يكفي)</label>
     <label class="check"><input type="checkbox" id="pOne" required>فاهم إن التفعيل على جهاز واحد بس</label>
     <button class="btn-gold" type="submit" id="paySend">ابعت طلب الاشتراك</button><div class="msg" id="payMsg" role="status"></div>
    </form>
@@ -464,7 +464,7 @@ function vBuy(){
     if(!f){m.className="msg bad";m.textContent="ارفع صورة التحويل.";return}
     b.disabled=true;m.className="msg";m.textContent="بنبعت طلبك...";
     try{const img=await shrink(f);const email=$("#pEmail").value.trim();
-      const d=await apiPost({name:$("#pName").value.trim(),email,ig:$("#pIg").value.trim(),follower:$("#pFollow").checked,img,device:DEV});
+      const d=await apiPost({name:$("#pName").value.trim(),email,ig:"",follower:$("#pFollow").checked,img,device:DEV});
       if(d&&d.ok){store.set("order",{id:d.id,email});m.className="msg good";m.textContent="وصلنا طلبك. أول ما نوافق هيوصلك الكود على إيميلك.";toast("اتبعت الطلب");setTimeout(()=>vBuy(),1600)}
       else{m.className="msg bad";m.textContent=d&&d.err==="email"?"الإيميل مش مظبوط.":"حصل خطأ، جرب تاني.";b.disabled=false}
     }catch(err){m.className="msg bad";m.textContent="مقدرناش نبعت الطلب. اتأكد من النت وجرب تاني.";b.disabled=false}});
