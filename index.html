@@ -166,6 +166,20 @@ details.scr[open] summary{border-bottom:1px solid var(--line)}
 .check input:checked+label{color:var(--muted);text-decoration:line-through}
 .toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#1a1207;padding:9px 20px;border-radius:999px;font-weight:700;opacity:0;transition:.3s;z-index:60;pointer-events:none}
 .toast.on{opacity:1;transform:translateX(-50%)}
+.lock{position:absolute;top:12px;inset-inline-end:12px;font-size:11px;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:1px 8px;background:var(--ink)}
+.tile{position:relative}
+.free{color:var(--ok)!important}
+.buy-hero{text-align:center;padding:22px 16px;border:1px solid var(--gold);border-radius:18px;background:radial-gradient(90% 80% at 50% 0,#2b1f0e,var(--panel))}
+.price{font-family:var(--display);font-size:46px;line-height:1.1;font-variant-numeric:tabular-nums}
+.price s{font-size:20px;color:var(--muted);margin-inline-start:8px}
+.steps{counter-reset:st;list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.steps li{counter-increment:st;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.steps li::before{content:counter(st);width:34px;height:34px;border-radius:50%;background:var(--gold);color:#1a1207;display:grid;place-items:center;font-weight:700;font-family:var(--display)}
+.pay-link{display:block;text-align:center;text-decoration:none;margin-top:8px}
+.handle{font-family:var(--body);direction:ltr;unicode-bidi:plaintext;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;user-select:all;-webkit-user-select:all;text-align:center;font-size:17px}
+.code-in{direction:ltr;text-align:center;letter-spacing:.12em;text-transform:uppercase;font-size:20px!important}
+.msg{min-height:1.6em;font-size:14px;text-align:center}
+.msg.bad{color:#e58b6b}.msg.good{color:var(--ok)}
 .foot{color:var(--muted);font-size:13px;text-align:center;margin-top:34px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important}}
 </style>
@@ -391,20 +405,46 @@ function mountReel(el,slides,chId){
   show(0);setPlay(true);
 }
 
+/* ---------- activation (works offline) ---------- */
+const PAY_URL="https://ipn.eg/S/walied120/instapay/3Oi2kt", PAY_ID="walied120@instapay";
+const PRICE=179, PRICE_OLD=299;
+const FREE=["home","intro","p1","sheet","buy"];
+function fnv(str){let h=0x811c9dc5;for(const ch of new TextEncoder().encode(str)){h^=ch;h=Math.imul(h,0x01000193)>>>0}return h>>>0}
+function validCode(c){c=String(c).toUpperCase().replace(/[^A-Z0-9]/g,"");if(!/^HQ[A-Z0-9]{8}$/.test(c))return false;const a=c.slice(2,6),b=c.slice(6,10);return fnv("hassala-haqiba-2026:"+a).toString(36).toUpperCase().padStart(7,"0").slice(-4)===b}
+let unlocked=store.get("unlocked",false)===true;
+const isLocked=r=>!unlocked&&!FREE.includes(r);
+const lockTag=r=>isLocked(r)?'<span class="lock">مقفول</span>':(r==="p1"||r==="sheet"||r==="intro")&&!unlocked?'<span class="lock free">مجاني</span>':"";
+function vBuy(){
+  if(unlocked){app.innerHTML=`<div class="view"><div class="buy-hero"><h2 class="gold-text">الحقيبة مفتوحة عندك</h2><p>كل الأجزاء والأدوات متاحة على الجهاز ده.</p></div><div class="nav-row"><button type="button" data-go="home" class="primary">الرئيسية</button></div></div>`;return}
+  app.innerHTML=`<div class="view">
+  <div class="buy-hero"><div class="sec-label" style="margin:0 0 6px">سعر الإطلاق لأول 100 مشتري</div><div class="price gold-text">${PRICE.toLocaleString('ar-EG')} جنيه<s>${PRICE_OLD.toLocaleString('ar-EG')}</s></div><p style="margin:6px 0 0;color:var(--muted)">دفعة واحدة، والحقيبة تفضل معاك على طول</p></div>
+  <div class="card"><h3>هتفتح إيه</h3><ul><li>الأجزاء 2 لـ 5: الإنترفيو، طلب الزيادة، الترقية، لو قالوا لأ</li><li>بنك السكريبتات: ${SCRIPTS.length.toLocaleString('ar-EG')} رسالة جاهزة للنسخ</li><li>ملف الإنجازات وقائمة التحضير</li></ul></div>
+  <div class="card"><h3>إزاي تشتري</h3><ol class="steps">
+   <li><div>حوّل ${PRICE.toLocaleString('ar-EG')} جنيه على InstaPay للحساب ده:<div class="handle" id="payId">${PAY_ID}</div><button class="copy" type="button" id="copyPay">انسخ الحساب</button><a class="btn-gold pay-link" href="${PAY_URL}" target="_blank" rel="noopener">ادفع بـ InstaPay</a></div></li>
+   <li><div>ابعت صورة التحويل في رسالة على صفحة <b>الحصّالة</b> على فيسبوك أو إنستجرام.</div></li>
+   <li><div>هيوصلك كود التفعيل في رسالة. اكتبه هنا:</div></li></ol>
+   <form class="form" id="codeForm" style="margin-top:12px"><div class="field"><label for="code">كود التفعيل</label><input id="code" class="code-in" placeholder="HQ-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div><button class="btn-gold" type="submit">فعّل الحقيبة</button><div class="msg" id="codeMsg" role="status"></div></form>
+  </div>
+  <div class="nav-row"><button type="button" data-go="sheet">جرّب شيت القيمة ببلاش</button></div></div>`;
+  $("#copyPay").addEventListener("click",()=>copyText(PAY_ID));
+  $("#codeForm").addEventListener("submit",e=>{e.preventDefault();const m=$("#codeMsg");if(validCode($("#code").value)){unlocked=true;store.set("unlocked",true);store.set("code",$("#code").value.toUpperCase());m.className="msg good";m.textContent="اتفعّلت. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),900)}else{m.className="msg bad";m.textContent="الكود مش صحيح. اتأكد من الحروف والأرقام، أو ابعتلنا على صفحة الحصّالة."}});
+}
+
 /* ---------- views ---------- */
-const TITLES={home:"حقيبة التفاوض والترقية",scripts:"بنك السكريبتات",sheet:"شيت القيمة",log:"ملف الإنجازات",check:"قائمة التحضير"};
+const TITLES={buy:"افتح الحقيبة كاملة",home:"حقيبة التفاوض والترقية",scripts:"بنك السكريبتات",sheet:"شيت القيمة",log:"ملف الإنجازات",check:"قائمة التحضير"};
 function vHome(){
   const done=CH.filter(c=>seen[c.id]).length;
   app.innerHTML=`<div class="view">
   <section class="hero"><img src="${EMBLEM}" alt=""><div><h1 class="gold-text">حقيبة التفاوض والترقية</h1><p>دليلك العملي لطلب حقك في الشغل، من الإنترفيو لحد الترقية.</p><p class="rule">خلّصت ${done.toLocaleString('ar-EG')} من ${CH.length.toLocaleString('ar-EG')} أجزاء</p></div></section>
+  ${unlocked?"":`<button class="tile tool" type="button" data-go="buy" style="width:100%;margin-top:14px;min-height:0;border-color:var(--gold)"><span class="t">افتح الحقيبة كاملة بـ ${PRICE.toLocaleString('ar-EG')} جنيه بدل ${PRICE_OLD.toLocaleString('ar-EG')}</span><span class="s">المقدمة والجزء الأول وشيت القيمة مجانًا. الباقي بكود تفعيل.</span></button>`}
   <div class="sec-label">الأجزاء</div>
-  <div class="grid">${CH.map(c=>`<button class="tile" type="button" data-go="${c.id}"><span class="n">${esc(c.n)}</span><span class="t">${esc(c.t)}</span><span class="s">${esc(c.s)}</span><span class="prog"><i style="width:${seen[c.id]?100:0}%"></i></span></button>`).join("")}</div>
+  <div class="grid">${CH.map(c=>`<button class="tile" type="button" data-go="${c.id}">${lockTag(c.id)}<span class="n">${esc(c.n)}</span><span class="t">${esc(c.t)}</span><span class="s">${esc(c.s)}</span><span class="prog"><i style="width:${seen[c.id]?100:0}%"></i></span></button>`).join("")}</div>
   <div class="sec-label">الأدوات</div>
   <div class="grid">
-   <button class="tile tool" type="button" data-go="sheet"><span class="n">أداة</span><span class="t">شيت القيمة</span><span class="s">احسب رقمك المستهدف وخطك الأحمر</span></button>
-   <button class="tile tool" type="button" data-go="scripts"><span class="n">${SCRIPTS.length.toLocaleString('ar-EG')} رسالة</span><span class="t">بنك السكريبتات</span><span class="s">رسائل جاهزة تنسخها وتعدل الأسامي</span></button>
-   <button class="tile tool" type="button" data-go="log"><span class="n">أداة</span><span class="t">ملف الإنجازات</span><span class="s">سجّل إنجازك كل شهر في 10 دقايق</span></button>
-   <button class="tile tool" type="button" data-go="check"><span class="n">أداة</span><span class="t">قائمة التحضير</span><span class="s">راجعها قبل أي اجتماع عن الفلوس</span></button>
+   <button class="tile tool" type="button" data-go="sheet">${lockTag("sheet")}<span class="n">أداة</span><span class="t">شيت القيمة</span><span class="s">احسب رقمك المستهدف وخطك الأحمر</span></button>
+   <button class="tile tool" type="button" data-go="scripts">${lockTag("scripts")}<span class="n">${SCRIPTS.length.toLocaleString('ar-EG')} رسالة</span><span class="t">بنك السكريبتات</span><span class="s">رسائل جاهزة تنسخها وتعدل الأسامي</span></button>
+   <button class="tile tool" type="button" data-go="log">${lockTag("log")}<span class="n">أداة</span><span class="t">ملف الإنجازات</span><span class="s">سجّل إنجازك كل شهر في 10 دقايق</span></button>
+   <button class="tile tool" type="button" data-go="check">${lockTag("check")}<span class="n">أداة</span><span class="t">قائمة التحضير</span><span class="s">راجعها قبل أي اجتماع عن الفلوس</span></button>
   </div>
   <p class="foot">الحصّالة · أفكار صغيرة.. تصنع حياة كبيرة</p></div>`;
 }
@@ -484,14 +524,14 @@ function vCheck(){
 }
 
 /* ---------- router (hash, stays inside the app) ---------- */
-const ROUTES=["home","scripts","sheet","log","check",...CH.map(c=>c.id)];
+const ROUTES=["home","buy","scripts","sheet","log","check",...CH.map(c=>c.id)];
 function route(){
   stopReel();
-  let r=(location.hash||"#home").slice(1); if(!ROUTES.includes(r))r="home";
+  let r=(location.hash||"#home").slice(1); if(!ROUTES.includes(r))r="home"; if(isLocked(r)){r="buy";try{history.replaceState(null,"","#buy")}catch(e){}}
   const ch=CH.find(c=>c.id===r);
   $("#barTitle").textContent=ch?ch.n+" · "+ch.t:TITLES[r];
   $("#backBtn").hidden=r==="home";$("#homeBtn").hidden=r==="home";
-  if(r==="home")vHome();else if(ch)vChapter(r);else ({scripts:vScripts,sheet:vSheet,log:vLog,check:vCheck})[r]();
+  if(r==="home")vHome();else if(ch)vChapter(r);else ({buy:vBuy,scripts:vScripts,sheet:vSheet,log:vLog,check:vCheck})[r]();
   window.scrollTo(0,0);
 }
 let depth=0;
@@ -501,7 +541,7 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g
 $("#backBtn").addEventListener("click",()=>{if(depth>0){depth--;history.back()}else{location.hash="home"}});
 $("#homeBtn").addEventListener("click",()=>go("home"));
 /* block navigation to anything outside the app */
-document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#"))e.preventDefault()},true);
+document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#")&&a.getAttribute("href")!==PAY_URL)e.preventDefault()},true);
 
 /* ---------- a cappella pad: synthesized humming choir (Web Audio) ---------- */
 const Music=(function(){
