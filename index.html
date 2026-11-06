@@ -456,6 +456,7 @@ function vBuy(){
   </div>
   <div class="nav-row"><button type="button" data-go="sheet">جرّب شيت القيمة ببلاش</button></div></div>`;
   loadStatus();
+  const pc=store.get("pcode",null);if(pc){const ci=$("#code");ci.value=pc;const cm=$("#codeMsg");cm.className="msg good";cm.textContent="الكود اتكتب لوحده. اضغط «فعّل الحقيبة على الجهاز ده».";setTimeout(()=>{ci.closest(".card").scrollIntoView({behavior:"smooth",block:"center"});$("#codeBtn").focus()},400)}
   if(pend&&navigator.onLine)apiGet("action=order&id="+encodeURIComponent(pend.id)).then(d=>{const el=$("#pendMsg");if(!el||!d)return;if(d.status==="approved")el.innerHTML="اتوافق على طلبك والكود اتبعت على إيميلك. اكتبه تحت.";else if(d.status==="rejected")el.innerHTML="مقدرناش نأكد التحويل. ابعتلنا على تيكتوك أو إنستجرام الحصّالة."}).catch(()=>{});
   $("#copyPay").addEventListener("click",()=>copyText(PAY_ID));
   $("#pShot").addEventListener("change",e=>{const f=e.target.files[0],im=$("#shotPrev");if(f){im.src=URL.createObjectURL(f);im.style.display="block"}});
@@ -473,7 +474,7 @@ function vBuy(){
     if(!navigator.onLine){m.className="msg bad";m.textContent="محتاج نت لحظة التفعيل بس.";return}
     b.disabled=true;m.className="msg";m.textContent="بنتأكد من الكود...";
     try{const d=await apiGet("action=verify&code="+encodeURIComponent(c)+"&device="+encodeURIComponent(DEV));
-      if(d&&d.ok){const code="HQ-"+c.slice(2,6)+"-"+c.slice(6);unlocked=true;store.set("unlocked",true);store.set("code",code);store.set("order",null);m.className="msg good";m.textContent="اتفعّلت على الجهاز ده. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),1000)}
+      if(d&&d.ok){const code="HQ-"+c.slice(2,6)+"-"+c.slice(6);unlocked=true;store.set("unlocked",true);store.set("code",code);store.set("order",null);store.set("pcode",null);m.className="msg good";m.textContent="اتفعّلت على الجهاز ده. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),1000)}
       else{m.className="msg bad";m.textContent=d&&d.err==="device"?"الكود ده اتفعّل قبل كده على جهاز تاني. التفعيل على جهاز واحد بس.":"الكود مش صحيح. اتأكد منه أو ابعتلنا على تيكتوك أو إنستجرام الحصّالة.";b.disabled=false}
     }catch(err){m.className="msg bad";m.textContent="مقدرناش نتأكد. اتأكد من النت وجرب تاني.";b.disabled=false}});
 }
@@ -638,6 +639,7 @@ function leave(withMusic){if(withMusic)setMusic(true);$("#splash").classList.add
 $("#startBtn").addEventListener("click",()=>leave(true));
 $("#startMute").addEventListener("click",()=>leave(false));
 
+try{const q=new URLSearchParams(location.search).get("code");if(q){store.set("pcode",String(q).toUpperCase().slice(0,20));history.replaceState(null,"",location.pathname+"#buy")}}catch(e){}
 route();
 })();
 </script>
