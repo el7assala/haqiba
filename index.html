@@ -182,7 +182,15 @@ details.scr[open] summary{border-bottom:1px solid var(--line)}
 .msg.bad{color:#e58b6b}.msg.good{color:var(--ok)}
 .foot{color:var(--muted);font-size:13px;text-align:center;margin-top:34px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important}}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.6;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--gold);flex:none;margin-top:3px}
+.warn{border:1px solid var(--gold);background:rgba(214,165,78,.1);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.7}
+.warn b{color:var(--gold-hi)}
+.file-in{border:1px dashed var(--gold)!important;padding:14px!important;cursor:pointer}
+.shot-prev{max-width:140px;border-radius:8px;border:1px solid var(--line);display:none;margin-top:6px}
+.left-badge{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:99px;background:rgba(214,165,78,.15);color:var(--gold-hi);font-size:13px}
 </style>
+
 
 </head>
 <body>
@@ -405,29 +413,69 @@ function mountReel(el,slides,chId){
   show(0);setPlay(true);
 }
 
-/* ---------- activation (works offline) ---------- */
+/* ---------- activation (online once, then offline) ---------- */
 const PAY_URL="https://ipn.eg/S/walied120/instapay/3Oi2kt", PAY_ID="walied120@instapay";
-const PRICE=179, PRICE_OLD=299;
+const IG_URL="https://www.instagram.com/el7assala/";
+const API="https://script.google.com/macros/s/AKfycbxF1F3QMaUfbeYpzg58wu8nY005PhZp9RVp7LY3zqXUKlsA4AjVU6-tTdRtGj70Z4Aw_w/exec";
+let PRICE=149; const PRICE_OLD=300, LIMIT=200; let LEFT=null;
 const FREE=["home","intro","p1","sheet","buy"];
-function fnv(str){let h=0x811c9dc5;for(const ch of new TextEncoder().encode(str)){h^=ch;h=Math.imul(h,0x01000193)>>>0}return h>>>0}
-function validCode(c){c=String(c).toUpperCase().replace(/[^A-Z0-9]/g,"");if(!/^HQ[A-Z0-9]{8}$/.test(c))return false;const a=c.slice(2,6),b=c.slice(6,10);return fnv("hassala-haqiba-2026:"+a).toString(36).toUpperCase().padStart(7,"0").slice(-4)===b}
-let unlocked=store.get("unlocked",false)===true;
+let DEV=store.get("dev",null); if(!DEV){const a=new Uint8Array(12);crypto.getRandomValues(a);DEV="D"+Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");store.set("dev",DEV)}
+let unlocked=store.get("unlocked",false)===true && store.get("code","").startsWith("HQ-");
 const isLocked=r=>!unlocked&&!FREE.includes(r);
 const lockTag=r=>isLocked(r)?'<span class="lock">مقفول</span>':(r==="p1"||r==="sheet"||r==="intro")&&!unlocked?'<span class="lock free">مجاني</span>':"";
+const n2a=n=>Number(n).toLocaleString('ar-EG');
+function apiGet(q){return fetch(API+"?"+q,{redirect:"follow"}).then(r=>r.json())}
+function apiPost(o){return fetch(API,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(o)}).then(r=>r.json())}
+function loadStatus(){if(!navigator.onLine)return;apiGet("action=status").then(d=>{if(!d||!d.ok)return;LEFT=d.left;PRICE=d.price;document.querySelectorAll("[data-left]").forEach(el=>{el.textContent=LEFT>0?("فاضل "+n2a(LEFT)+" من "+n2a(LIMIT)+" اشتراك بالخصم"):"خلص عدد الخصم";el.hidden=false});document.querySelectorAll("[data-price]").forEach(el=>el.textContent=n2a(PRICE))}).catch(()=>{})}
+function shrink(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const m=1400,k=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.onerror=()=>rej(new Error("img"));img.src=u})}
+const ONE_DEVICE=`<div class="warn"><b>تنبيه مهم:</b> كود التفعيل بيشتغل على <b>جهاز واحد بس</b>. أول جهاز تكتب عليه الكود هو اللي الحقيبة تتفتح عليه، ومش هيشتغل على أي جهاز تاني. اشترك وفعّل من الجهاز اللي هتستخدمه.</div>`;
 function vBuy(){
   if(unlocked){app.innerHTML=`<div class="view"><div class="buy-hero"><h2 class="gold-text">الحقيبة مفتوحة عندك</h2><p>كل الأجزاء والأدوات متاحة على الجهاز ده.</p></div><div class="nav-row"><button type="button" data-go="home" class="primary">الرئيسية</button></div></div>`;return}
+  const pend=store.get("order",null);
   app.innerHTML=`<div class="view">
-  <div class="buy-hero"><div class="sec-label" style="margin:0 0 6px">سعر الإطلاق لأول 100 مشتري</div><div class="price gold-text">${PRICE.toLocaleString('ar-EG')} جنيه<s>${PRICE_OLD.toLocaleString('ar-EG')}</s></div><p style="margin:6px 0 0;color:var(--muted)">دفعة واحدة، والحقيبة تفضل معاك على طول</p></div>
-  <div class="card"><h3>هتفتح إيه</h3><ul><li>الأجزاء 2 لـ 5: الإنترفيو، طلب الزيادة، الترقية، لو قالوا لأ</li><li>بنك السكريبتات: ${SCRIPTS.length.toLocaleString('ar-EG')} رسالة جاهزة للنسخ</li><li>ملف الإنجازات وقائمة التحضير</li></ul></div>
-  <div class="card"><h3>إزاي تشتري</h3><ol class="steps">
-   <li><div>حوّل ${PRICE.toLocaleString('ar-EG')} جنيه على InstaPay للحساب ده:<div class="handle" id="payId">${PAY_ID}</div><button class="copy" type="button" id="copyPay">انسخ الحساب</button><a class="btn-gold pay-link" href="${PAY_URL}" target="_blank" rel="noopener">ادفع بـ InstaPay</a></div></li>
-   <li><div>ابعت صورة التحويل في رسالة على صفحة <b>الحصّالة</b> على فيسبوك أو إنستجرام.</div></li>
-   <li><div>هيوصلك كود التفعيل في رسالة. اكتبه هنا:</div></li></ol>
-   <form class="form" id="codeForm" style="margin-top:12px"><div class="field"><label for="code">كود التفعيل</label><input id="code" class="code-in" placeholder="HQ-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></div><button class="btn-gold" type="submit">فعّل الحقيبة</button><div class="msg" id="codeMsg" role="status"></div></form>
+  <div class="buy-hero"><div class="sec-label" style="margin:0 0 6px;font-size:16px">للحصول على الحقيبة بالكامل ادفع</div><div class="price gold-text"><span data-price>${n2a(PRICE)}</span> جنيه</div><p style="margin:2px 0 0;font-size:18px">بدلًا من <s style="color:var(--muted)">${n2a(PRICE_OLD)} جنيه</s></p><p style="margin:6px 0 0;color:var(--muted)">دفعة واحدة بتفتح <b>كل</b> الأجزاء والأدوات، مش جزء واحد. والحقيبة تفضل معاك على طول.</p><p style="margin:4px 0 0;color:var(--muted);font-size:13px">السعر ده لأول ${n2a(LIMIT)} مشترك من متابعين الحصّالة</p><span class="left-badge" data-left hidden></span></div>
+  ${ONE_DEVICE}
+  <div class="card"><h3>المبلغ ده بيفتحلك الحقيبة كلها</h3><ul><li>الأجزاء 2 لـ 5: الإنترفيو، طلب الزيادة، الترقية، لو قالوا لأ</li><li>بنك السكريبتات: ${n2a(SCRIPTS.length)} رسالة جاهزة للنسخ</li><li>ملف الإنجازات وقائمة التحضير</li></ul></div>
+  ${pend?`<div class="card"><h3>طلبك وصلنا</h3><p id="pendMsg">بنراجع التحويل، وأول ما نوافق هيوصلك كود التفعيل على <b dir="ltr">${esc(pend.email)}</b>. بص على الإيميل (والسبام كمان).</p></div>`:""}
+  <div class="card"><h3>إزاي تشترك</h3><ol class="steps">
+   <li><div>لازم تكون متابع للحصّالة على إنستجرام عشان الخصم.<a class="btn-gold pay-link" href="${IG_URL}" target="_blank" rel="noopener">تابع الحصّالة</a></div></li>
+   <li><div>حوّل <b data-price>${n2a(PRICE)}</b> جنيه على InstaPay (ثمن الحقيبة كاملة):<div class="handle" id="payId">${PAY_ID}</div><button class="copy" type="button" id="copyPay">انسخ الحساب</button><a class="btn-gold pay-link" href="${PAY_URL}" target="_blank" rel="noopener">ادفع بـ InstaPay</a></div></li>
+   <li><div>ارفع صورة التحويل واكتب إيميلك، وأول ما نوافق هيوصلك الكود على الإيميل أوتوماتيك.</div></li></ol>
+   <form class="form" id="payForm" style="margin-top:12px">
+    <div class="field"><label for="pName">اسمك</label><input id="pName" autocomplete="name" required maxlength="80"></div>
+    <div class="field"><label for="pEmail">إيميلك (هيوصلك عليه الكود)</label><input id="pEmail" type="email" dir="ltr" autocomplete="email" required></div>
+    <div class="field"><label for="pIg">اسم حسابك على إنستجرام</label><input id="pIg" dir="ltr" placeholder="@username" required maxlength="60"></div>
+    <div class="field"><label for="pShot">صورة التحويل</label><input id="pShot" class="file-in" type="file" accept="image/*" required><img id="shotPrev" class="shot-prev" alt=""></div>
+    <label class="check"><input type="checkbox" id="pFollow" required>أنا متابع لصفحة الحصّالة على إنستجرام</label>
+    <label class="check"><input type="checkbox" id="pOne" required>فاهم إن التفعيل على جهاز واحد بس</label>
+    <button class="btn-gold" type="submit" id="paySend">ابعت طلب الاشتراك</button><div class="msg" id="payMsg" role="status"></div>
+   </form>
+  </div>
+  <div class="card"><h3>معاك الكود؟</h3>
+   <form class="form" id="codeForm"><div class="field"><label for="code">كود التفعيل</label><input id="code" class="code-in" placeholder="HQ-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" required></div><button class="btn-gold" type="submit" id="codeBtn">فعّل الحقيبة على الجهاز ده</button><div class="msg" id="codeMsg" role="status"></div><p style="font-size:13px;color:var(--muted);margin:0">محتاج نت لحظة التفعيل بس، وبعدها الحقيبة تشتغل من غير نت.</p></form>
   </div>
   <div class="nav-row"><button type="button" data-go="sheet">جرّب شيت القيمة ببلاش</button></div></div>`;
+  loadStatus();
+  if(pend&&navigator.onLine)apiGet("action=order&id="+encodeURIComponent(pend.id)).then(d=>{const el=$("#pendMsg");if(!el||!d)return;if(d.status==="approved")el.innerHTML="اتوافق على طلبك والكود اتبعت على إيميلك. اكتبه تحت.";else if(d.status==="rejected")el.innerHTML="مقدرناش نأكد التحويل. ابعتلنا على إنستجرام الحصّالة."}).catch(()=>{});
   $("#copyPay").addEventListener("click",()=>copyText(PAY_ID));
-  $("#codeForm").addEventListener("submit",e=>{e.preventDefault();const m=$("#codeMsg");if(validCode($("#code").value)){unlocked=true;store.set("unlocked",true);store.set("code",$("#code").value.toUpperCase());m.className="msg good";m.textContent="اتفعّلت. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),900)}else{m.className="msg bad";m.textContent="الكود مش صحيح. اتأكد من الحروف والأرقام، أو ابعتلنا على صفحة الحصّالة."}});
+  $("#pShot").addEventListener("change",e=>{const f=e.target.files[0],im=$("#shotPrev");if(f){im.src=URL.createObjectURL(f);im.style.display="block"}});
+  $("#payForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("#payMsg"),b=$("#paySend");const f=$("#pShot").files[0];
+    if(!navigator.onLine){m.className="msg bad";m.textContent="محتاج نت عشان تبعت الطلب.";return}
+    if(!f){m.className="msg bad";m.textContent="ارفع صورة التحويل.";return}
+    b.disabled=true;m.className="msg";m.textContent="بنبعت طلبك...";
+    try{const img=await shrink(f);const email=$("#pEmail").value.trim();
+      const d=await apiPost({name:$("#pName").value.trim(),email,ig:$("#pIg").value.trim(),follower:$("#pFollow").checked,img,device:DEV});
+      if(d&&d.ok){store.set("order",{id:d.id,email});m.className="msg good";m.textContent="وصلنا طلبك. أول ما نوافق هيوصلك الكود على إيميلك.";toast("اتبعت الطلب");setTimeout(()=>vBuy(),1600)}
+      else{m.className="msg bad";m.textContent=d&&d.err==="email"?"الإيميل مش مظبوط.":"حصل خطأ، جرب تاني.";b.disabled=false}
+    }catch(err){m.className="msg bad";m.textContent="مقدرناش نبعت الطلب. اتأكد من النت وجرب تاني.";b.disabled=false}});
+  $("#codeForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("#codeMsg"),b=$("#codeBtn");const c=$("#code").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(!/^HQ[A-Z0-9]{8}$/.test(c)){m.className="msg bad";m.textContent="الكود شكله HQ-XXXX-XXXX. اتأكد من الحروف.";return}
+    if(!navigator.onLine){m.className="msg bad";m.textContent="محتاج نت لحظة التفعيل بس.";return}
+    b.disabled=true;m.className="msg";m.textContent="بنتأكد من الكود...";
+    try{const d=await apiGet("action=verify&code="+encodeURIComponent(c)+"&device="+encodeURIComponent(DEV));
+      if(d&&d.ok){const code="HQ-"+c.slice(2,6)+"-"+c.slice(6);unlocked=true;store.set("unlocked",true);store.set("code",code);store.set("order",null);m.className="msg good";m.textContent="اتفعّلت على الجهاز ده. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),1000)}
+      else{m.className="msg bad";m.textContent=d&&d.err==="device"?"الكود ده اتفعّل قبل كده على جهاز تاني. التفعيل على جهاز واحد بس.":"الكود مش صحيح. اتأكد منه أو ابعتلنا على إنستجرام الحصّالة.";b.disabled=false}
+    }catch(err){m.className="msg bad";m.textContent="مقدرناش نتأكد. اتأكد من النت وجرب تاني.";b.disabled=false}});
 }
 
 /* ---------- views ---------- */
@@ -436,7 +484,7 @@ function vHome(){
   const done=CH.filter(c=>seen[c.id]).length;
   app.innerHTML=`<div class="view">
   <section class="hero"><img src="${EMBLEM}" alt=""><div><h1 class="gold-text">حقيبة التفاوض والترقية</h1><p>دليلك العملي لطلب حقك في الشغل، من الإنترفيو لحد الترقية.</p><p class="rule">خلّصت ${done.toLocaleString('ar-EG')} من ${CH.length.toLocaleString('ar-EG')} أجزاء</p></div></section>
-  ${unlocked?"":`<button class="tile tool" type="button" data-go="buy" style="width:100%;margin-top:14px;min-height:0;border-color:var(--gold)"><span class="t">افتح الحقيبة كاملة بـ ${PRICE.toLocaleString('ar-EG')} جنيه بدل ${PRICE_OLD.toLocaleString('ar-EG')}</span><span class="s">المقدمة والجزء الأول وشيت القيمة مجانًا. الباقي بكود تفعيل.</span></button>`}
+  ${unlocked?"":`<button class="tile tool" type="button" data-go="buy" style="width:100%;margin-top:14px;min-height:0;border-color:var(--gold)"><span class="t">للحصول على الحقيبة بالكامل ادفع ${n2a(PRICE)} جنيه بدلًا من ${n2a(PRICE_OLD)}</span><span class="s">لأول ٢٠٠ مشترك من متابعين الحصّالة. المقدمة والجزء الأول وشيت القيمة مجانًا.</span></button>`}
   <div class="sec-label">الأجزاء</div>
   <div class="grid">${CH.map(c=>`<button class="tile" type="button" data-go="${c.id}">${lockTag(c.id)}<span class="n">${esc(c.n)}</span><span class="t">${esc(c.t)}</span><span class="s">${esc(c.s)}</span><span class="prog"><i style="width:${seen[c.id]?100:0}%"></i></span></button>`).join("")}</div>
   <div class="sec-label">الأدوات</div>
@@ -541,7 +589,7 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g
 $("#backBtn").addEventListener("click",()=>{if(depth>0){depth--;history.back()}else{location.hash="home"}});
 $("#homeBtn").addEventListener("click",()=>go("home"));
 /* block navigation to anything outside the app */
-document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#")&&a.getAttribute("href")!==PAY_URL)e.preventDefault()},true);
+document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#")&&a.getAttribute("href")!==PAY_URL&&a.getAttribute("href")!==IG_URL)e.preventDefault()},true);
 
 /* ---------- a cappella pad: synthesized humming choir (Web Audio) ---------- */
 const Music=(function(){
