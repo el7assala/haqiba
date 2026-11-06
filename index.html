@@ -415,7 +415,7 @@ function mountReel(el,slides,chId){
 
 /* ---------- activation (online once, then offline) ---------- */
 const PAY_URL="https://ipn.eg/S/walied120/instapay/3Oi2kt", PAY_ID="walied120@instapay";
-const IG_URL="https://www.instagram.com/el7assala/";
+const IG_URL="https://www.instagram.com/el7assala/", TT_URL="https://www.tiktok.com/@walied.aglan";
 const API="https://script.google.com/macros/s/AKfycbxF1F3QMaUfbeYpzg58wu8nY005PhZp9RVp7LY3zqXUKlsA4AjVU6-tTdRtGj70Z4Aw_w/exec";
 let PRICE=149; const PRICE_OLD=300, LIMIT=200; let LEFT=null;
 const FREE=["home","intro","p1","sheet","buy"];
@@ -433,20 +433,20 @@ function vBuy(){
   if(unlocked){app.innerHTML=`<div class="view"><div class="buy-hero"><h2 class="gold-text">الحقيبة مفتوحة عندك</h2><p>كل الأجزاء والأدوات متاحة على الجهاز ده.</p></div><div class="nav-row"><button type="button" data-go="home" class="primary">الرئيسية</button></div></div>`;return}
   const pend=store.get("order",null);
   app.innerHTML=`<div class="view">
-  <div class="buy-hero"><div class="sec-label" style="margin:0 0 6px;font-size:16px">للحصول على الحقيبة بالكامل ادفع</div><div class="price gold-text"><span data-price>${n2a(PRICE)}</span> جنيه</div><p style="margin:2px 0 0;font-size:18px">بدلًا من <s style="color:var(--muted)">${n2a(PRICE_OLD)} جنيه</s></p><p style="margin:6px 0 0;color:var(--muted)">دفعة واحدة بتفتح <b>كل</b> الأجزاء والأدوات، مش جزء واحد. والحقيبة تفضل معاك على طول.</p><p style="margin:4px 0 0;color:var(--muted);font-size:13px">السعر ده لأول ${n2a(LIMIT)} مشترك من متابعين الحصّالة</p><span class="left-badge" data-left hidden></span></div>
+  <div class="buy-hero"><div class="sec-label" style="margin:0 0 6px;font-size:16px">للحصول على الحقيبة بالكامل ادفع</div><div class="price gold-text"><span data-price>${n2a(PRICE)}</span> جنيه</div><p style="margin:2px 0 0;font-size:18px">بدلًا من <s style="color:var(--muted)">${n2a(PRICE_OLD)} جنيه</s></p><p style="margin:6px 0 0;color:var(--muted)">دفعة واحدة بتفتح <b>كل</b> الأجزاء والأدوات، مش جزء واحد. والحقيبة تفضل معاك على طول.</p><p style="margin:4px 0 0;color:var(--muted);font-size:13px">السعر ده لأول ${n2a(LIMIT)} مشترك من متابعين الحصّالة على تيكتوك أو إنستجرام</p><span class="left-badge" data-left hidden></span></div>
   ${ONE_DEVICE}
   <div class="card"><h3>المبلغ ده بيفتحلك الحقيبة كلها</h3><ul><li>الأجزاء 2 لـ 5: الإنترفيو، طلب الزيادة، الترقية، لو قالوا لأ</li><li>بنك السكريبتات: ${n2a(SCRIPTS.length)} رسالة جاهزة للنسخ</li><li>ملف الإنجازات وقائمة التحضير</li></ul></div>
   ${pend?`<div class="card"><h3>طلبك وصلنا</h3><p id="pendMsg">بنراجع التحويل، وأول ما نوافق هيوصلك كود التفعيل على <b dir="ltr">${esc(pend.email)}</b>. بص على الإيميل (والسبام كمان).</p></div>`:""}
   <div class="card"><h3>إزاي تشترك</h3><ol class="steps">
-   <li><div>لازم تكون متابع للحصّالة على إنستجرام عشان الخصم.<a class="btn-gold pay-link" href="${IG_URL}" target="_blank" rel="noopener">تابع الحصّالة</a></div></li>
+   <li><div>لازم تكون متابع للحصّالة على تيكتوك أو إنستجرام عشان السعر ده.<a class="btn-gold pay-link" href="${TT_URL}" target="_blank" rel="noopener">تابع الحصّالة على تيكتوك</a><a class="btn-gold pay-link" href="${IG_URL}" target="_blank" rel="noopener">تابع الحصّالة على إنستجرام</a></div></li>
    <li><div>حوّل <b data-price>${n2a(PRICE)}</b> جنيه على InstaPay (ثمن الحقيبة كاملة):<div class="handle" id="payId">${PAY_ID}</div><button class="copy" type="button" id="copyPay">انسخ الحساب</button><a class="btn-gold pay-link" href="${PAY_URL}" target="_blank" rel="noopener">ادفع بـ InstaPay</a></div></li>
    <li><div>ارفع صورة التحويل واكتب إيميلك، وأول ما نوافق هيوصلك الكود على الإيميل أوتوماتيك.</div></li></ol>
    <form class="form" id="payForm" style="margin-top:12px">
     <div class="field"><label for="pName">اسمك</label><input id="pName" autocomplete="name" required maxlength="80"></div>
     <div class="field"><label for="pEmail">إيميلك (هيوصلك عليه الكود)</label><input id="pEmail" type="email" dir="ltr" autocomplete="email" required></div>
-    <div class="field"><label for="pIg">اسم حسابك على إنستجرام</label><input id="pIg" dir="ltr" placeholder="@username" required maxlength="60"></div>
+    <div class="field"><label for="pIg">اسم حسابك اللي متابع بيه (تيكتوك أو إنستجرام)</label><input id="pIg" dir="ltr" placeholder="@username" required maxlength="60"></div>
     <div class="field"><label for="pShot">صورة التحويل</label><input id="pShot" class="file-in" type="file" accept="image/*" required><img id="shotPrev" class="shot-prev" alt=""></div>
-    <label class="check"><input type="checkbox" id="pFollow" required>أنا متابع لصفحة الحصّالة على إنستجرام</label>
+    <label class="check"><input type="checkbox" id="pFollow" required>أنا متابع للحصّالة على تيكتوك أو إنستجرام</label>
     <label class="check"><input type="checkbox" id="pOne" required>فاهم إن التفعيل على جهاز واحد بس</label>
     <button class="btn-gold" type="submit" id="paySend">ابعت طلب الاشتراك</button><div class="msg" id="payMsg" role="status"></div>
    </form>
@@ -456,7 +456,7 @@ function vBuy(){
   </div>
   <div class="nav-row"><button type="button" data-go="sheet">جرّب شيت القيمة ببلاش</button></div></div>`;
   loadStatus();
-  if(pend&&navigator.onLine)apiGet("action=order&id="+encodeURIComponent(pend.id)).then(d=>{const el=$("#pendMsg");if(!el||!d)return;if(d.status==="approved")el.innerHTML="اتوافق على طلبك والكود اتبعت على إيميلك. اكتبه تحت.";else if(d.status==="rejected")el.innerHTML="مقدرناش نأكد التحويل. ابعتلنا على إنستجرام الحصّالة."}).catch(()=>{});
+  if(pend&&navigator.onLine)apiGet("action=order&id="+encodeURIComponent(pend.id)).then(d=>{const el=$("#pendMsg");if(!el||!d)return;if(d.status==="approved")el.innerHTML="اتوافق على طلبك والكود اتبعت على إيميلك. اكتبه تحت.";else if(d.status==="rejected")el.innerHTML="مقدرناش نأكد التحويل. ابعتلنا على تيكتوك أو إنستجرام الحصّالة."}).catch(()=>{});
   $("#copyPay").addEventListener("click",()=>copyText(PAY_ID));
   $("#pShot").addEventListener("change",e=>{const f=e.target.files[0],im=$("#shotPrev");if(f){im.src=URL.createObjectURL(f);im.style.display="block"}});
   $("#payForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("#payMsg"),b=$("#paySend");const f=$("#pShot").files[0];
@@ -474,7 +474,7 @@ function vBuy(){
     b.disabled=true;m.className="msg";m.textContent="بنتأكد من الكود...";
     try{const d=await apiGet("action=verify&code="+encodeURIComponent(c)+"&device="+encodeURIComponent(DEV));
       if(d&&d.ok){const code="HQ-"+c.slice(2,6)+"-"+c.slice(6);unlocked=true;store.set("unlocked",true);store.set("code",code);store.set("order",null);m.className="msg good";m.textContent="اتفعّلت على الجهاز ده. الحقيبة كلها مفتوحة.";toast("اتفعّلت");setTimeout(()=>go("home"),1000)}
-      else{m.className="msg bad";m.textContent=d&&d.err==="device"?"الكود ده اتفعّل قبل كده على جهاز تاني. التفعيل على جهاز واحد بس.":"الكود مش صحيح. اتأكد منه أو ابعتلنا على إنستجرام الحصّالة.";b.disabled=false}
+      else{m.className="msg bad";m.textContent=d&&d.err==="device"?"الكود ده اتفعّل قبل كده على جهاز تاني. التفعيل على جهاز واحد بس.":"الكود مش صحيح. اتأكد منه أو ابعتلنا على تيكتوك أو إنستجرام الحصّالة.";b.disabled=false}
     }catch(err){m.className="msg bad";m.textContent="مقدرناش نتأكد. اتأكد من النت وجرب تاني.";b.disabled=false}});
 }
 
@@ -484,7 +484,7 @@ function vHome(){
   const done=CH.filter(c=>seen[c.id]).length;
   app.innerHTML=`<div class="view">
   <section class="hero"><img src="${EMBLEM}" alt=""><div><h1 class="gold-text">حقيبة التفاوض والترقية</h1><p>دليلك العملي لطلب حقك في الشغل، من الإنترفيو لحد الترقية.</p><p class="rule">خلّصت ${done.toLocaleString('ar-EG')} من ${CH.length.toLocaleString('ar-EG')} أجزاء</p></div></section>
-  ${unlocked?"":`<button class="tile tool" type="button" data-go="buy" style="width:100%;margin-top:14px;min-height:0;border-color:var(--gold)"><span class="t">للحصول على الحقيبة بالكامل ادفع ${n2a(PRICE)} جنيه بدلًا من ${n2a(PRICE_OLD)}</span><span class="s">لأول ٢٠٠ مشترك من متابعين الحصّالة. المقدمة والجزء الأول وشيت القيمة مجانًا.</span></button>`}
+  ${unlocked?"":`<button class="tile tool" type="button" data-go="buy" style="width:100%;margin-top:14px;min-height:0;border-color:var(--gold)"><span class="t">للحصول على الحقيبة بالكامل ادفع ${n2a(PRICE)} جنيه بدلًا من ${n2a(PRICE_OLD)}</span><span class="s">لأول ٢٠٠ مشترك من متابعين الحصّالة على تيكتوك أو إنستجرام. المقدمة والجزء الأول وشيت القيمة مجانًا.</span></button>`}
   <div class="sec-label">الأجزاء</div>
   <div class="grid">${CH.map(c=>`<button class="tile" type="button" data-go="${c.id}">${lockTag(c.id)}<span class="n">${esc(c.n)}</span><span class="t">${esc(c.t)}</span><span class="s">${esc(c.s)}</span><span class="prog"><i style="width:${seen[c.id]?100:0}%"></i></span></button>`).join("")}</div>
   <div class="sec-label">الأدوات</div>
@@ -589,7 +589,7 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g
 $("#backBtn").addEventListener("click",()=>{if(depth>0){depth--;history.back()}else{location.hash="home"}});
 $("#homeBtn").addEventListener("click",()=>go("home"));
 /* block navigation to anything outside the app */
-document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#")&&a.getAttribute("href")!==PAY_URL&&a.getAttribute("href")!==IG_URL)e.preventDefault()},true);
+document.addEventListener("click",e=>{const a=e.target.closest("a[href]");if(a&&!a.getAttribute("href").startsWith("#")&&a.getAttribute("href")!==PAY_URL&&a.getAttribute("href")!==IG_URL&&a.getAttribute("href")!==TT_URL)e.preventDefault()},true);
 
 /* ---------- a cappella pad: synthesized humming choir (Web Audio) ---------- */
 const Music=(function(){
